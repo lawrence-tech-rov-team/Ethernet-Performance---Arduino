@@ -1,6 +1,6 @@
 /*
  * NOTES: 
- * UDP max packet size is 220 (tcpip.cpp line 413)
+ * UDP max packet size is 400 (tcpip.cpp line 413)
  */
 
 #include <EtherCard.h>
