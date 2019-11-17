@@ -1,3 +1,8 @@
+/*
+ * NOTES: 
+ * UDP max packet size is 220 (tcpip.cpp line 413)
+ */
+
 #include <EtherCard.h>
 #include <IPAddress.h>
 
@@ -31,7 +36,9 @@ void udpSerialPrint(uint16_t dest_port, uint8_t src_ip[IP_LEN], uint16_t src_por
   Serial.print("src_port: ");
   ether.printIp(src_ip);
   Serial.println("data: ");*/
-  Serial.println(data);
+  //Serial.println(data);
+  ether.sendUdp(data, len, recvPort, destIP, destPort);
+  //sendCountMsg(len);
 }
 
 void setup(){
@@ -60,7 +67,7 @@ uint32_t currentTime;
 void loop(){
   //this must be called for ethercard functions to work.
   ether.packetLoop(ether.packetReceive());
-
+/*
   currentTime = millis();
   if((currentTime - timer) >= 1000){
     timer += 1000;
@@ -68,6 +75,7 @@ void loop(){
     Serial.println(count);
     sendCountMsg(count++);
   }
+  */
 }
 
 //Size of temp buffer to send message
