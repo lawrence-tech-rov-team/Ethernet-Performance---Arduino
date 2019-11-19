@@ -2,6 +2,7 @@
  * NOTES: 
  * UDP max packet size is 400 (tcpip.cpp line 413)
  */
+#define ETHER_CARD_BUFFER_SIZE 400
 
 #include <EtherCard.h>
 #include <IPAddress.h>
@@ -21,7 +22,7 @@ static byte destIP[] = { 255,255,255,255 }; //Broadcast to all
 
 #define CS 8 //CS pin
 
-byte Ethernet::buffer[500]; // tcp/ip send and receive buffer
+
 
 //callback that prints received packets to the serial port
 void udpSerialPrint(uint16_t dest_port, uint8_t src_ip[IP_LEN], uint16_t src_port, const char *data, uint16_t len){
@@ -45,7 +46,7 @@ void setup(){
   Serial.begin(9600);
   Serial.println(F("\nInitializing..."));
 
-  if (ether.begin(sizeof Ethernet::buffer, mymac, CS) == 0)
+  if (ether.begin(mymac, CS) == 0)
     Serial.println(F("Failed to access Ethernet controller"));
   Serial.println("Connected to controller.");
 
