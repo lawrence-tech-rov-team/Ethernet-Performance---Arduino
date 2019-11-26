@@ -1,64 +1,20 @@
-/*
- * NOTES: 
- * UDP max packet size is 400 (tcpip.cpp line 413)
- */
-#define ETHER_CARD_BUFFER_SIZE 400
 
-#include <EtherCard.h>
-#include <IPAddress.h>
+#include "EtherComm.h"
 
-//What to set the Arduino ethernet ip address to
-static byte myip[] = { 169,254,240,157 };
-
-//Gateway IP address. Not really used, but required.
-static byte gwip[] = { 192,168,178,1 }; 
-
-//What to set the Arduino's ethernet mac address to - must be unique on your network
-static byte mymac[] = { 0x70,0x69,0x69,0x2D,0x30,0x31 };
-
-unsigned int recvPort = 6001;
-unsigned int destPort = 6002;
-static byte destIP[] = { 255,255,255,255 }; //Broadcast to all
-
-#define CS 8 //CS pin
+#define Ethernet_CS 8
+EtherComm comm(6001, 6002); //recv port, dest port
 
 
-
-//callback that prints received packets to the serial port
-void udpSerialPrint(uint16_t dest_port, uint8_t src_ip[IP_LEN], uint16_t src_port, const char *data, uint16_t len){
-/*  IPAddress src(src_ip[0],src_ip[1],src_ip[2],src_ip[3]);
-
-  Serial.print("dest_port: ");
-  Serial.println(dest_port);
-  Serial.print("src_port: ");
-  Serial.println(src_port);
-
-
-  Serial.print("src_port: ");
-  ether.printIp(src_ip);
-  Serial.println("data: ");*/
-  //Serial.println(data);
-  ether.sendUdp(data, len, recvPort, destIP, destPort);
-  //sendCountMsg(len);
-}
-
-void setup(){
+void setup(){//Ethernet_CS
   Serial.begin(9600);
   Serial.println(F("\nInitializing..."));
 
-  if (ether.begin(mymac, CS) == 0)
+  
+  if (!comm.begin(Ethernet_CS)){
     Serial.println(F("Failed to access Ethernet controller"));
-  Serial.println("Connected to controller.");
-
-  Serial.println("Static IP Setup...");
-  ether.staticSetup(myip, gwip);
-
-  ether.printIp("IP:  ", ether.myip);
-  ether.printIp("GW:  ", ether.gwip);
-  ether.printIp("DNS: ", ether.dnsip);
-
-  //Register the udpSerialPrint() method to listen to port the receive port.
-  ether.udpServerListenOnPort(&udpSerialPrint, recvPort);
+    while(1);
+  }
+  Serial.println(F("Connected to controller."));
 }
 
 uint16_t count = 0;
@@ -67,7 +23,7 @@ uint32_t currentTime;
 
 void loop(){
   //this must be called for ethercard functions to work.
-  ether.packetLoop(ether.packetReceive());
+  comm.Loop();
 /*
   currentTime = millis();
   if((currentTime - timer) >= 1000){
@@ -78,7 +34,7 @@ void loop(){
   }
   */
 }
-
+/*
 //Size of temp buffer to send message
 #define MSG_SIZE 6 
 
@@ -98,4 +54,4 @@ void sendCountMsg(uint16_t num){
   //Send the message using our handy-dandy library
   ether.sendUdp(msgStart, len, recvPort, destIP, destPort);
 }
-
+*/
