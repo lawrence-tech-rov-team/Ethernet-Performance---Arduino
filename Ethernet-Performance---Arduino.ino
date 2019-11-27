@@ -2,7 +2,6 @@
 #include "EtherComm.h"
 
 #define Ethernet_CS 8
-EtherComm comm(6001, 6002); //recv port, dest port
 
 
 void setup(){//Ethernet_CS
@@ -10,29 +9,16 @@ void setup(){//Ethernet_CS
   Serial.println(F("\nInitializing..."));
 
   
-  if (!comm.begin(Ethernet_CS)){
+  if (!EtherComm::begin(6001, 6002, Ethernet_CS)){ //recv port, dest port, cs pin
     Serial.println(F("Failed to access Ethernet controller"));
     while(1);
   }
   Serial.println(F("Connected to controller."));
 }
 
-uint16_t count = 0;
-uint32_t timer = 0;
-uint32_t currentTime;
-
 void loop(){
-  //this must be called for ethercard functions to work.
-  comm.Loop();
-/*
-  currentTime = millis();
-  if((currentTime - timer) >= 1000){
-    timer += 1000;
-    Serial.print("--> ");
-    Serial.println(count);
-    sendCountMsg(count++);
-  }
-  */
+  //this must be called for comm functions to work.
+  EtherComm::Loop();
 }
 /*
 //Size of temp buffer to send message
