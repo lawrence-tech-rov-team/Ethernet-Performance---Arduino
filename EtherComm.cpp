@@ -9,71 +9,33 @@ uint16_t EtherComm::_recvPort = 0;
 uint16_t EtherComm::_destPort = 0;
 
 char EtherComm::buffer[BUFFER_SIZE];
-//bool EtherComm::foundStart = false;
-
-//===========================================================================================================================================
-void RunPingCommand(const char* data, uint16_t len){
-  if(len == 1){
-    EtherComm::buffer[2] = data[0];
-    EtherComm::SendCommand(CMD_PING, 1);
-  }
-}
-//===========================================================================================================================================
-bool CheckChecksum(const char *data, uint16_t len){
-  len--;
-  uint8_t checksum = 0;
-  for(uint16_t index = 0; index < len; index++){
-    checksum += (uint8_t)data[index];
-  }
-
-  return (checksum & CHECKSUM_MASK) == (uint8_t)data[len];
-}
 
 //callback that prints received packets to the serial port
-void udpReceive(uint16_t dest_port, uint8_t src_ip[IP_LEN], uint16_t src_port, const char *data, uint16_t len){
+void udpReceive(uint16_t dest_port, uint8_t src_ip[IP_LEN], uint16_t src_port, const char *data, uint16_t packetLen){
 /*  IPAddress src(src_ip[0],src_ip[1],src_ip[2],src_ip[3]);
+  ether.printIp(src_ip);*/
+  if(packetLen >= 3){ //At minimum, start byte, command, and checksum.
+    uint8_t dataLen;
+    if(packetLen > 258) dataLen = 255;
+    else dataLen = (uint8_t)(packetLen - 3);
 
-  Serial.print("dest_port: ");
-  Serial.println(dest_port);
-  Serial.print("src_port: ");
-  Serial.println(src_port);
-
-
-  Serial.print("src_port: ");
-  ether.printIp(src_ip);
-  Serial.println("data: ");*/
-  //Serial.println(data);
-  //EtherComm::sendUdp(data, len);
-  //sendCountMsg(len);
-  //digitalWrite(13, LOW);
-  if(len >= 3){ //At minimum, start byte, command, and checksum.
-    //Serial.print("DatLen: ");
-    //Serial.println(len);
-    //digitalWrite(13, HIGH);
     if((uint8_t)data[0] == START_BYTE){
-      if(CheckChecksum(data, len)){
-        //Serial.println("Checksum");
-        uint8_t cmd = (uint8_t)data[1];
-        //Serial.println(cmd);
-        data += 2;
-        len -= 3;
-  
-        switch(cmd){
-          case CMD_PING: 
-            RunPingCommand(data, len);
-            break;
-          default: break;
-        }
+      if(EtherComm::CheckChecksum(data, dataLen)){
+        EtherComm::CommandReceived((uint8_t)data[1], (const uint8_t*)(data + 2), dataLen);
       }
     }
   }
 }
 
-/*
-void EtherComm::sendUdp(const char *data, uint16_t len){
-  ether.sendUdp(data, len, _recvPort, _destIP, _destPort);
+bool EtherComm::CheckChecksum(const char *data, uint8_t len){
+  data++; //Ignore first byte, the start byte.
+  uint8_t checksum = *(data++); //Start by 'adding' the command to the checksum
+  while(len-- > 0){
+    checksum += (uint8_t)(*(data++));
+  }
+  return (checksum & CHECKSUM_MASK) == (uint8_t)(*data);
 }
-*/
+
 bool EtherComm::begin(uint16_t recvPort, uint16_t destPort, uint8_t csPin){
   EtherComm::_recvPort = recvPort;
   EtherComm::_destPort = destPort;
@@ -94,17 +56,20 @@ bool EtherComm::begin(uint16_t recvPort, uint16_t destPort, uint8_t csPin){
   return true;
 }
 
-void EtherComm::SendCommand(uint8_t cmd, uint16_t len){
+void EtherComm::SendCommand(uint8_t cmd, uint8_t len){
   EtherComm::buffer[0] = START_BYTE;
   EtherComm::buffer[1] = cmd;
-  len += 2;
+  //EtherComm::buffer[2] = len;
   
-  uint8_t checksum = 0;
-  uint16_t index = 0;
-  while(index < len){
-    checksum += (uint8_t)EtherComm::buffer[index++];  
+  uint8_t checksum = cmd;
+  char* index = &EtherComm::buffer[2];
+  uint8_t bytes = len;
+  while(bytes-- > 0){
+    checksum += (uint8_t)(*(index++));  
   }
-  EtherComm::buffer[index] = (uint8_t)(checksum & CHECKSUM_MASK);
+  (*index) = (uint8_t)(checksum & CHECKSUM_MASK);
 
-  ether.sendUdp(EtherComm::buffer, len + 3, _recvPort, _destIP, _destPort);
+  Serial.print("Send: ");
+  Serial.println(len);
+  ether.sendUdp(EtherComm::buffer, (uint16_t)len + (uint16_t)3, _recvPort, _destIP, _destPort);
 }

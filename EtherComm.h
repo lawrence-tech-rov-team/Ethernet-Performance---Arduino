@@ -1,34 +1,26 @@
 #ifndef ETHER_COMM_H
 #define ETHER_COMM_H
 
-/*
- * NOTES: 
- * UDP max packet size is <512 (tcpip.cpp line 413)
- */
-
 #include <EtherCard.h>
 #include <IPAddress.h>
 
-#define BUFFER_SIZE 100
-
-#define CHECKSUM_MASK 0x7F
-
+#define BUFFER_SIZE 258 //Start byte, command byte, 255 data bytes, checksum byte
+#define CHECKSUM_MASK 0xFF
 #define START_BYTE 0xFF
-
-#define CMD_PING 0
 
 class EtherComm{
 public:
 
   static bool begin(uint16_t recvPort, uint16_t destPort, uint8_t csPin);
 
-  friend void udpSerialPrint(uint16_t dest_port, uint8_t src_ip[IP_LEN], uint16_t src_port, const char *data, uint16_t len);
+  friend void udpReceive(uint16_t dest_port, uint8_t src_ip[IP_LEN], uint16_t src_port, const char *data, uint16_t len);
 
   static void Loop(){
     ether.packetLoop(ether.packetReceive());
   }
 
-  static void SendCommand(uint8_t cmd, uint16_t len);
+  static void SendCommand(uint8_t cmd, uint8_t len);
+
   static char buffer[];
 
 private:
@@ -40,12 +32,11 @@ private:
   static uint16_t _destPort;
   static byte _destIP[]; //Broadcast to all
 
-  //static bool foundStart;
-
-  //static void sendUdp(const char *data, uint16_t len);
+  static bool CheckChecksum(const char *data, uint8_t len);
+  static void CommandReceived(uint8_t command, const uint8_t* data, uint8_t len);
   
-  EtherComm(/*uint16_t recvPort, uint16_t destPort*/)/* : _recvPort(recvPort), _destPort(destPort)*/{  
-  }
+  
+  EtherComm(){}
 };
 
 #endif //ETHER_COMM_H
